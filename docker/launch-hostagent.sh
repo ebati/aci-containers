@@ -46,7 +46,7 @@ function get_ip {
 }
 
 function get_mac {
-    ip link show enp0s8 | awk '/ether/ {print $2}'
+    ip link show "$1" | awk '/ether/ {print $2}'
 }
 
 # Add host access links
