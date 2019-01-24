@@ -238,6 +238,28 @@ func (agent *HostAgent) diffPorts(bridges map[string]ovsBridge) []libovsdb.Opera
 				ops = append(ops, adds...)
 			}
 		}
+		// check if acc bridge exists and add host veth if needed
+		accbr, ok := bridges[agent.config.AccessBridgeName]
+		if ok {
+			if _, pok := accbr.ports["veth_host_acc"]; pok {
+				found[agent.config.AccessBridgeName]["veth_host_acc"] = true
+			} else {
+				agent.log.Debug("Adding host access port veth_host_acc")
+				adds, err :=
+					addIfaceOps("veth_host_acc", "pi-veth_host_acc",
+						"pa-veth_host_acc",
+						bridges[agent.config.AccessBridgeName].uuid,
+						bridges[agent.config.IntBridgeName].uuid,
+						strconv.Itoa(opid))
+					agent.ignoreOvsPorts[agent.config.IntBridgeName] = []string{"pi-veth_host_acc"}
+					agent.ignoreOvsPorts[agent.config.AccessBridgeName] = []string{"pa-veth_host_acc"}
+				opid++
+				if err != nil {
+					agent.log.Error(err)
+				}
+				ops = append(ops, adds...)
+			}
+		}
 	}
 
 	agent.indexMutex.Unlock()

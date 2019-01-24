@@ -37,6 +37,69 @@ if [ -w ${PREFIX} ]; then
     mkdir -p ${VARDIR}/lib/aci-containers/k8s-pod-network
 fi
 
+function check_eth {
+    ip link show "$1" | grep -q "$1"
+}
+
+function get_ip {
+    ip addr show "$1" | grep -o 'inet [0-9]\+\.[0-9]\+\.[0-9]\+\.[0-9]\+' | grep -o [0-9].*
+}
+
+function get_mac {
+    ip link show enp0s8 | awk '/ether/ {print $2}'
+}
+
+# Add host access links
+if check_eth veth_host; then
+    echo "veth_host already exists, skip creation"
+else
+    ip link add veth_host type veth peer name veth_host_acc
+    PEER=$(ip link | grep @veth_host: | awk '{print $2}' | awk -F @ '{print $1}')
+    ip link set $PEER name veth_host_acc
+    ip link set veth_host up
+    ip link set veth_host_acc up
+fi
+ACC_MAC=$(get_mac veth_host_acc)
+
+# FIXME Let deployment decide interface name
+if check_eth eth0; then
+    VTEP_IP=$(get_ip eth0)
+elif check_eth enp0s8; then
+    VTEP_IP=$(get_ip enp0s8)
+else
+    echo "VTEP interface not found"
+fi
+
+# FIXME make route addition based on pod subnet.
+CHECK=$(ip route show 10.2.56.0/24 | wc -l)
+if [ $CHECK -ne 0 ]; then
+    ip route del 10.2.56.0/24
+fi
+
+ip route add 10.2.56.0/24 dev veth_host scope link src $VTEP_IP
+ 
+# Create Host EP file
+cat <<EOF > ${VARDIR}/lib/opflex-agent-ovs/endpoints/veth_host_acc.ep
+{
+  "uuid": "veth_host_acc",
+  "eg-policy-space": "kube",
+  "endpoint-group-name": "kubernetes|kube-default",
+  "ip": [
+    "$VTEP_IP"
+  ],
+  "mac": "$ACC_MAC"
+  "access-interface": "veth_host_acc",
+  "access-uplink-interface": "pa-veth_host_acc",
+  "interface-name": "pi-veth_host_acc",
+  "attributes": {
+    "app": "host-access",
+    "interface-name": "veth_host_acc",
+    "namespace": "default",
+    "vm-name": "host-access"
+  }
+}
+EOF
+
 CMD=${HOSTAGENT}
 if [ -f ${HOSTAGENT_CONF} ]; then
     CMD="${CMD} -config-path ${HOSTAGENT_CONF}"
