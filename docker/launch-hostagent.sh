@@ -87,7 +87,7 @@ cat <<EOF > ${VARDIR}/lib/opflex-agent-ovs/endpoints/veth_host_acc.ep
   "ip": [
     "$VTEP_IP"
   ],
-  "mac": "$ACC_MAC"
+  "mac": "$ACC_MAC",
   "access-interface": "veth_host_acc",
   "access-uplink-interface": "pa-veth_host_acc",
   "interface-name": "pi-veth_host_acc",
@@ -99,6 +99,8 @@ cat <<EOF > ${VARDIR}/lib/opflex-agent-ovs/endpoints/veth_host_acc.ep
   }
 }
 EOF
+
+cat ${VARDIR}/lib/opflex-agent-ovs/endpoints/veth_host_acc.ep
 
 CMD=${HOSTAGENT}
 if [ -f ${HOSTAGENT_CONF} ]; then
