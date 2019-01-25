@@ -59,7 +59,7 @@ else
     ip link set veth_host up
     ip link set veth_host_ac up
 fi
-ACC_MAC=$(get_mac veth_host_ac)
+ACC_MAC=$(get_mac veth_host)
 
 # FIXME Let deployment decide interface name
 if check_eth eth0; then
