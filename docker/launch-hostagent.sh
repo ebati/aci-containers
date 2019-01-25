@@ -53,13 +53,13 @@ function get_mac {
 if check_eth veth_host; then
     echo "veth_host already exists, skip creation"
 else
-    ip link add veth_host type veth peer name veth_host_acc
+    ip link add veth_host type veth peer name veth_host_ac
     PEER=$(ip link | grep @veth_host: | awk '{print $2}' | awk -F @ '{print $1}')
-    ip link set $PEER name veth_host_acc
+    ip link set $PEER name veth_host_ac
     ip link set veth_host up
-    ip link set veth_host_acc up
+    ip link set veth_host_ac up
 fi
-ACC_MAC=$(get_mac veth_host_acc)
+ACC_MAC=$(get_mac veth_host_ac)
 
 # FIXME Let deployment decide interface name
 if check_eth eth0; then
@@ -79,28 +79,28 @@ fi
 ip route add 10.2.56.0/24 dev veth_host scope link src $VTEP_IP
  
 # Create Host EP file
-cat <<EOF > ${VARDIR}/lib/opflex-agent-ovs/endpoints/veth_host_acc.ep
+cat <<EOF > ${VARDIR}/lib/opflex-agent-ovs/endpoints/veth_host_ac.ep
 {
-  "uuid": "veth_host_acc",
+  "uuid": "veth_host_ac",
   "eg-policy-space": "kube",
   "endpoint-group-name": "kubernetes|kube-default",
   "ip": [
     "$VTEP_IP"
   ],
   "mac": "$ACC_MAC",
-  "access-interface": "veth_host_acc",
-  "access-uplink-interface": "pa-veth_host_acc",
-  "interface-name": "pi-veth_host_acc",
+  "access-interface": "veth_host_ac",
+  "access-uplink-interface": "pa-veth_host_ac",
+  "interface-name": "pi-veth_host_ac",
   "attributes": {
     "app": "host-access",
-    "interface-name": "veth_host_acc",
+    "interface-name": "veth_host_ac",
     "namespace": "default",
     "vm-name": "host-access"
   }
 }
 EOF
 
-cat ${VARDIR}/lib/opflex-agent-ovs/endpoints/veth_host_acc.ep
+cat ${VARDIR}/lib/opflex-agent-ovs/endpoints/veth_host_ac.ep
 
 CMD=${HOSTAGENT}
 if [ -f ${HOSTAGENT_CONF} ]; then
