@@ -80,7 +80,8 @@ ip route add 10.2.56.0/24 dev veth_host scope link src $VTEP_IP
  
 # Create Host EP file
 UUID=${HOSTNAME}_${VTEP_IP}_veth_host_ac
-FNAME=${UUID}.ep
+#FNAME=${UUID}.ep
+FNAME=veth_host_ac.ep
 
 cat <<EOF > ${VARDIR}/lib/opflex-agent-ovs/endpoints/${FNAME}
 {
