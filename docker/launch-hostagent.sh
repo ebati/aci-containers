@@ -83,7 +83,7 @@ cat <<EOF > ${VARDIR}/lib/opflex-agent-ovs/endpoints/veth_host_ac.ep
 {
   "uuid": "veth_host_ac",
   "eg-policy-space": "kube",
-  "endpoint-group-name": "kubernetes|kube-default",
+  "endpoint-group-name": "kubernetes|kube-nodes",
   "ip": [
     "$VTEP_IP"
   ],
