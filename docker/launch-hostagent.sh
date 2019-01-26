@@ -79,9 +79,12 @@ fi
 ip route add 10.2.56.0/24 dev veth_host scope link src $VTEP_IP
  
 # Create Host EP file
-cat <<EOF > ${VARDIR}/lib/opflex-agent-ovs/endpoints/veth_host_ac.ep
+UUID=${HOSTNAME}_${VTEP_IP}_veth_host_ac
+FNAME=${UUID}.ep
+
+cat <<EOF > ${VARDIR}/lib/opflex-agent-ovs/endpoints/${FNAME}
 {
-  "uuid": "veth_host_ac",
+  "uuid": "$UUID",
   "eg-policy-space": "kube",
   "endpoint-group-name": "kubernetes|kube-nodes",
   "ip": [
@@ -100,7 +103,7 @@ cat <<EOF > ${VARDIR}/lib/opflex-agent-ovs/endpoints/veth_host_ac.ep
 }
 EOF
 
-cat ${VARDIR}/lib/opflex-agent-ovs/endpoints/veth_host_ac.ep
+cat ${VARDIR}/lib/opflex-agent-ovs/endpoints/${FNAME}
 
 CMD=${HOSTAGENT}
 if [ -f ${HOSTAGENT_CONF} ]; then
