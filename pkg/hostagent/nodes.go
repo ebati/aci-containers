@@ -19,6 +19,8 @@ package hostagent
 import (
 	"encoding/json"
 	"reflect"
+	"io/ioutil"
+	"path/filepath"
 
 	"github.com/Sirupsen/logrus"
 	v1 "k8s.io/api/core/v1"
@@ -31,6 +33,10 @@ import (
 	"k8s.io/kubernetes/pkg/controller"
 
 	"github.com/noironetworks/aci-containers/pkg/metadata"
+)
+
+const (
+	hostVethEP = "veth_host_ac.ep"
 )
 
 func (agent *HostAgent) initNodeInformerFromClient(
@@ -108,20 +114,44 @@ func (agent *HostAgent) nodeChanged(obj interface{}) {
 		}
 	}
 
+	gotVtep := false
 	if agent.vtepIP == "" {
 		for _, a := range node.Status.Addresses {
 			if a.Type == v1.NodeInternalIP {
 				agent.vtepIP = a.Address
 				agent.log.Infof("vtepIP: %s", agent.vtepIP)
+				gotVtep = true
 			}
 		}
 	}
 
 	agent.indexMutex.Unlock()
+	if gotVtep {
+		agent.registerHostVeth()
+	}
 
 	if updateServices {
 		agent.updateAllServices()
 	}
+}
+
+func (agent *HostAgent) registerHostVeth() {
+	ep := &opflexEndpoint{}
+	epfile := filepath.Join(agent.config.OpFlexEndpointDir, hostVethEP)
+	datacont, err := ioutil.ReadFile(epfile)
+	if err != nil {
+		agent.log.Errorf("Unable to read %s - %v", epfile, err)
+		return
+	}
+
+	err = json.Unmarshal(datacont, ep)
+	if err != nil {
+		agent.log.Errorf("Unable to read %s - %v", epfile, err)
+		return
+	}
+
+	agent.log.Infof("-- Adding %+v to registry", ep)
+	agent.EPRegAdd(ep)
 }
 
 func (agent *HostAgent) nodeDeleted(obj interface{}) {
