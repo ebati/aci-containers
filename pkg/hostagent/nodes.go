@@ -18,9 +18,10 @@ package hostagent
 
 import (
 	"encoding/json"
-	"reflect"
 	"io/ioutil"
 	"path/filepath"
+	"reflect"
+	"time"
 
 	"github.com/Sirupsen/logrus"
 	v1 "k8s.io/api/core/v1"
@@ -136,22 +137,30 @@ func (agent *HostAgent) nodeChanged(obj interface{}) {
 }
 
 func (agent *HostAgent) registerHostVeth() {
-	ep := &opflexEndpoint{}
-	epfile := filepath.Join(agent.config.OpFlexEndpointDir, hostVethEP)
-	datacont, err := ioutil.ReadFile(epfile)
-	if err != nil {
-		agent.log.Errorf("Unable to read %s - %v", epfile, err)
-		return
-	}
+	go func() {
+		for {
+			ep := &opflexEndpoint{}
+			epfile := filepath.Join(agent.config.OpFlexEndpointDir, hostVethEP)
+			datacont, err := ioutil.ReadFile(epfile)
+			if err != nil {
+				agent.log.Errorf("Unable to read %s - %v", epfile, err)
+				return
+			}
 
-	err = json.Unmarshal(datacont, ep)
-	if err != nil {
-		agent.log.Errorf("Unable to read %s - %v", epfile, err)
-		return
-	}
+			err = json.Unmarshal(datacont, ep)
+			if err != nil {
+				agent.log.Errorf("Unable to read %s - %v", epfile, err)
+				return
+			}
 
-	agent.log.Infof("-- Adding %+v to registry", ep)
-	agent.EPRegAdd(ep)
+			agent.log.Infof("-- Adding %+v to registry", ep)
+			agent.EPRegAdd(ep)
+			if ep.registryKey != "" {
+				return
+			}
+			time.Sleep(5 * time.Second)
+		}
+	}()
 }
 
 func (agent *HostAgent) nodeDeleted(obj interface{}) {
